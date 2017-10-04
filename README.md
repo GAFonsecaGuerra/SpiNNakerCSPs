@@ -63,8 +63,12 @@ you will also require:
 
 ## Authors
 
-* **Gabriel Fonseca**  - [GAFonsecaGuerra](https://github.com/GAFonsecaGuerra)
-* **Steve Furber** -  [sfurber](https://github.com/sfurber)
+This package has been developed by  **Gabriel Fonseca**  - [GAFonsecaGuerra](https://github.com/GAFonsecaGuerra)
+and  **Steve Furber** -  [sfurber](https://github.com/sfurber) at The University of Manchester as part of the 
+paper:
+
+"Using Stochastic Spiking Neural Networks on SpiNNaker to Solve Constraint Satisfaction Problems"
+Submitted to the journal Frontiers in Neuroscience| Neuromorphic Engineering
 
 See also the list of [contributors](https://github.com/GAFonsecaGuerra/SpiNNakerCSPs/graphs/contributors) who participated in this project.
 
