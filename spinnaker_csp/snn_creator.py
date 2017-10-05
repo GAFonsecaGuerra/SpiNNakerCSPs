@@ -12,6 +12,8 @@ are either inhibitory or excitatory. The neurons are stochastically stimulated b
 process causing the network dynamics to implement a stochastic search of the satisying configuration.
 """
 # a separator for readability of messages on standard output
+import spynnaker7.pyNN as p  # simulator
+
 msg = '%s \n'%('='*70)
 
 class CSP:
@@ -55,7 +57,7 @@ class CSP:
             domain_size: how many values can assume each variable (integer).
             constraints: a list of tuples of conflicting variables (list of tuples).
             exc_constraints: a list of tuples of variables taking the same value (list of tuples).
-            core_size: number of neurons to represent each variable of the CSP (integer).
+            core_size: number of neurons to represent each value that a variable can assume (integer).
             directed: if True applies the constraints  from source to target as defined by the list of tuples,
                 if False constraints are applied also from target to source (undirected graph).
         """
@@ -69,3 +71,30 @@ class CSP:
         self.clues = [[]]
         self.run_time = run_time
 
+    def set_clues(self, clues):
+        """
+        Take set_clues as an array of the form [[list of variables],[list of values]].
+
+        Here clues are fixed and predetermined values for particular variables, These influence the constraints
+        implementation.
+
+        args:
+            clues: an array of the form [[list of variable ids],[list of values taken by those variables]]
+        """
+        self.clues = clues
+
+
+    def build_domains_pops(self):
+        """
+        generate an array of pyNN population objects, one for each CSP variable.
+
+        The population size will be self.size = domain_size*core_size.
+        var_pops[i] is the population for variable i including all domain sub-populations, each of zise core_size.
+        """
+        print(msg, 'creating %d neural populations' % (self.variables_number))
+        var_pops = []
+        for variable in range(self.variables_number):
+            var_pops.append(p.Population(self.size,
+                                         p.IF_curr_exp, self.cell_params_lif,
+                                         label="var%d" % (variable + 1)))
+        self.var_pops = var_pops
