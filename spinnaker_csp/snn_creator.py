@@ -402,8 +402,8 @@ class CSP:
             v_range: range for the random distribution of membrane potentials in the form [v_min, v_max].
         """
         print(msg, 'randomly setting the initial voltage for each variable population')
-        for var in self.var_pops:
-            var.initialize("v", RandomDistribution("uniform", v_range))
+        for variable in self.var_pops:
+            variable.initialize("v", RandomDistribution("uniform", v_range))
 
     def recording(self):
         """Record spikes from neural populations representing CSP variables.
@@ -412,8 +412,8 @@ class CSP:
         representing CSP variables.
         """
         print(msg, 'activating recording for variable populations')
-        for pop in self.var_pops:
-            pop.record()
+        for population in self.var_pops:
+            population.record()
         # allow real time output for the Sudoku visualiser.
         if self.live:
             print('activating live output')
@@ -422,12 +422,86 @@ class CSP:
     def record_stimulation(self):
         """Record spikes from stimulating noise sources."""
         print(msg, 'activating recording for noise populations')
-        for pulse in self.stim_pops:
-            for pop in pulse:
-                pop.record()
+        for stimulus in self.stim_pops:
+            for population in stimulus:
+                population.record()
 
     def record_dissipation(self):
         """Record spikes from depressing noise sources."""
         print(msg, 'activating recording for dissipation populations')
-        for pop in self.diss_pops:
-            pop.record()
+        for depressor in self.diss_pops:
+            depressor.record()
+
+    def save(self, filename, DAT=False):
+        """Save spikes recorded from neural populations representing CSP variables.
+                
+        The recording() method should be called first in order to make spikes available for saving. All files will be 
+        saved into the results folder.
+        
+        args:
+            filename: prefix of the file name where spikes will be saved in binary format. The full name will be: 
+                filename_spikes_binary.
+            DAT: whether spikes should be saved also in .dat format on an additional file.
+        """
+        if DAT:
+            print(msg, 'saving spikes from CSP variables to file results/%s_variable#.dat' % filename)
+            for var_index, population in enumerate(self.var_pops):
+                population.printSpikes('results/%s_variable%d.dat' % (filename, var_index))
+        with open('results/%s_spikes_binary' % filename, 'w+') as file:
+            #TODO refactor params as dictionary with *kwargs
+            params = [self.run_time,
+                      self.variables_number,
+                      self.size,
+                      self.domain_size,
+                      self.core_size,
+                      self.constraints,
+                      self.stim_times,
+                      self.diss_times]
+            np.save(file, params)
+            for population in self.var_pops:
+                spikes = population.getSpikes()
+                np.save(file, spikes)
+        self.spikes_file = filename
+
+    def save_stimulation(self, filename, DAT=False):
+        """Save spikes recorded from stimulating noise sources.
+
+        The record_stimulation() method should be called first in order to make spikes available for saving.
+        
+        args:
+            filename: prefix of the file name where spikes will be saved in .dat format. The full name will be: 
+                stim_#_filename_variables#.dat.
+            DAT: whether spikes should be saved also in .dat format on an additional file.
+        """
+        if DAT:
+            for pulse_index, pulse in enumerate(self.stim_pops):
+                print(msg, 'saving spikes from noise sources to file results/stim_%d_%s.dat' % (pulse_index, filename))
+                for var_index, population in enumerate(pulse):
+                    population.printSpikes('results/stim_%d_%s_variables%d.dat' % (pulse_index, filename, var_index))
+        with open('results/%s_stim_spikes_binary' % filename, 'w+') as file:
+            for pulse in self.stim_pops:
+                for population in pulse:
+                    spikes = population.getSpikes()
+                    np.save(file, spikes)
+
+
+    def save_dissipation(self, filename, DAT=False):
+        """Save spikes recorded from depressing noise sources.
+
+        The record_dissipation() method should be called first in order to make spikes available for saving.
+        
+        args:
+            filename: prefix of the file name where spikes will be saved in .dat format. The full name will be: 
+                diss_#_filename_variables#.dat.
+            DAT: whether spikes should be saved also in .dat format on an additional file.
+        """
+        if DAT:
+            for pulse_index, pulse in enumerate(self.diss_pops):
+                print(msg, 'saving dissipation to file results/diss_%d_%s.dat' % (pulse_index, filename))
+                for var_index, population in enumerate(pulse):
+                    population.printSpikes('results/diss_%d_%s_variable%d.dat' % (pulse_index, filename, var_index))
+        with open('results/%s_diss_spikes_binary' % filename, 'w+') as file:
+            for pulse in self.diss_pops:
+                for population in pulse:
+                    spikes = population.getSpikes()
+                    np.save(file, spikes)
