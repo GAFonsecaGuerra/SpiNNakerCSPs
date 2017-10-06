@@ -395,12 +395,39 @@ class CSP:
                     self.constraint_conns.append(synapses)
 
 
-   def initialize(self, v_range=[-65.0, -55.0]):
-        """ Randomly initialize the membrane voltage of the neurons in the range v_range.
+    def initialize(self, v_range=[-65.0, -55.0]):
+        """Randomly initialize the membrane voltage of the neurons in the range v_range.
 
         args:
             v_range: range for the random distribution of membrane potentials in the form [v_min, v_max].
         """
-        print msg, 'randomly setting the initial voltage for each variable population'
+        print(msg, 'randomly setting the initial voltage for each variable population')
         for var in self.var_pops:
             var.initialize("v", RandomDistribution("uniform", v_range))
+
+    def recording(self):
+        """Record spikes from neural populations representing CSP variables.
+        
+        If live class variable is set to True this method also activate live output for the neural populations 
+        representing CSP variables.
+        """
+        print(msg, 'activating recording for variable populations')
+        for pop in self.var_pops:
+            pop.record()
+        # allow real time output for the Sudoku visualiser.
+        if self.live:
+            print('activating live output')
+            p.external_devices.activate_live_output_for(self.var_pops)
+
+    def record_stimulation(self):
+        """Record spikes from stimulating noise sources."""
+        print(msg, 'activating recording for noise populations')
+        for pulse in self.stim_pops:
+            for pop in pulse:
+                pop.record()
+
+    def record_dissipation(self):
+        """Record spikes from depressing noise sources."""
+        print(msg, 'activating recording for dissipation populations')
+        for pop in self.diss_pops:
+            pop.record()
