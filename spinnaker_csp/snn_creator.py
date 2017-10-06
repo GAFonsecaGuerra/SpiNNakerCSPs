@@ -13,6 +13,7 @@ process causing the network dynamics to implement a stochastic search of the sat
 """
 # a separator for readability of messages on standard output
 import spynnaker7.pyNN as p  # simulator
+from pyNN.random import RandomDistribution
 
 msg = '%s \n'%('='*70)
 
@@ -222,13 +223,61 @@ class CSP:
                                                             shrink=shrink, phase=phase)
         diss_pops = [[] for k in range(d_populations)]
         for k in range(d_populations):
-            for j in range(self.variables_number):
+            for variable in range(self.variables_number):
                 diss_pops[k].append(p.Population(self.size, p.SpikeSourcePoisson,
                                                  {"rate": rate, "start": comienza[k], "duration": termina[k]},
-                                                 label="diss%d_var%d" % (k + 1, j + 1)))
+                                                 label="diss%d_var%d" % (k + 1, variable + 1)))
         #TODO: if self.clues_inibition = False do not create the populations for the clues.
         self.diss_pops = diss_pops
         self.d_populations = d_populations
         self.disss = diss_times
 
+   def connect_cores(self, w_range=[0.6, 1.2], d_range=[1.0, 1.2]):
+        """
+        Create internal excitatory connections between the neurons of each domain subpopulation of each variable.
 
+        In the network representing the CSP, each neural population representing a variable contains a subpopulation
+        for each possible value on its domain. This method connects all-to-all the neurons of each domain population
+        of each variable using escitatory synapses.
+
+        args:
+            w_range: range for the random distribution of synaptic weights in the form [w_min, w_max].
+            d_range: range for the random distribution of synaptic delays in the form [d_min, d_max].
+        """
+        print(msg, 'internally connnecting the neurons of each domain of each variable')
+        delays = RandomDistribution('uniform', d_range)
+        weights = RandomDistribution('uniform', w_range)
+        connections = [(m, n, weights.next() if m // self.core_size == n // self.core_size and m != n else 0.0,
+                        delays.next()) for n in range(self.domain_size * self.core_size) for m in
+                       range(self.domain_size * self.core_size)]
+        for variable in range(self.variables_number):
+            synapses = p.Projection(self.var_pops[variable], self.var_pops[variable], p.FromListConnector(connections,
+                                                                                                          safe=True),
+                                    target="excitatory")
+            self.core_conns.append(synapses)
+
+    def internal_inhibition(self, w_range=[-0.2, 0.0], d_range=[2.0, 2.0]):
+        """
+        Connect the domains populations of the same variable using inhibitory synapses.
+
+        the connectiviy establishes a lateral inhibition circuit over the domains of each variable, so that most of the
+        time only the neurons from a single domain population are active.
+
+        args:
+            w_range: range for the random distribution of synaptic weights in the form [w_min, w_max].
+            d_range: range for the random distribution of synaptic delays in the form [d_min, d_max].
+        """
+        print(msg, 'Creating lateral inhibition between domains of each variable')
+        delays = RandomDistribution('uniform', d_range)
+        weights = RandomDistribution('uniform',w_range)
+        connections = [(m, n, 0.0 if m // self.core_size == n // self.core_size else  weights.next(), delays.next()) for
+                       n in range(self.size) for m in range(self.size)]
+        for variable in range(self.variables_number):
+            if self.clues_inhibition:
+                synapses = p.Projection(self.var_pops[variable], self.var_pops[variable], p.FromListConnector(connections, safe=True),
+                                        target="inhibitory")
+                self.internal_conns.append(synapses)
+            elif variable not in self.clues:
+                synapses = p.Projection(self.var_pops[variable], self.var_pops[variable], p.FromListConnector(connections, safe=True),
+                                        target="inhibitory")
+                self.internal_conns.append(synapses)
