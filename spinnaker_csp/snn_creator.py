@@ -91,10 +91,60 @@ class CSP:
         The population size will be self.size = domain_size*core_size.
         var_pops[i] is the population for variable i including all domain sub-populations, each of zise core_size.
         """
-        print(msg, 'creating %d neural populations' % (self.variables_number))
+        print(msg, 'creating an array of %d neural populations'%(self.variables_number))
         var_pops = []
         for variable in range(self.variables_number):
             var_pops.append(p.Population(self.size,
                                          p.IF_curr_exp, self.cell_params_lif,
                                          label="var%d" % (variable + 1)))
         self.var_pops = var_pops
+
+    def poisson_params(self, n_populations, full=False, stim_ratio=1.0, shrink=1.0, phase=0.0):
+        """ 
+        Define time intervals for activation of the pyNN Poisson noise sources.
+
+        This method defines the temporal dependence of the stimulating noise, it is an internal method called by the 
+        build_stimulation_pops method. Here we use the word noise to refer to spike sources implementing a random 
+        Poisson process. In pyNN these objects connect with neurons using synapses as if they were neurons too.
+        Currently each SpikeSourcePoisson object accepts only a start time and a duration time, thus to change the noise
+        level through time one should create n different populations and activate them at different times. 
+        Here we uniformly distribute the start times of the n_populations from phase to run_time. Each population will be active 
+        for a period lapso = shrink * self.run_time / n_populations if full=False otherwise will stay active during all 
+        run_time. To avoid synchronization of all the noise sources and improve the stochasticity of the search a
+        time interval delta is defined to randomly spread the activation 
+        and deactivation times of the SpikeSourcePoisson objects, see diagram.
+
+                   |comienza-|-------Full Noise--------|--termina|
+                   |--delta--|                         |--delta--|
+                   0%-------100%                      100%------0%
+                   |------Noise=(lapso - stim_ratio)---|--stim_ratio--------|            
+                   |------lapso=runtime*shrink/n_popultions--------------...|
+        |--phase---|------noise interval = runtime*shrink----------------------------------------...|
+        |-----------------------------------------------run_time----------------------------------------------------...|
+        
+        Other stochastic search strategies to solve the CSP may be implemented modifying this method and the 
+        build_stimulation_pops method below.        
+
+
+        args:
+            n_populations: number of noise populations to stimulate each CSP variable. 
+            shrink: shrink the run_time to uniformelly distribute noise pulses in a smaller interval (from 0. to 1.)
+            full: controls if the stimulations deactivation should all happen after run_time or at the lapso width.
+            stim_ratio: defines the portion of the stimulation window in which the stimulation will be active. A value 
+                of 0.5 will mean that stimulation happens only during the first half of the interval.
+
+        returns: 
+            list of starting times
+            lists of random distributions for start and duration of noise stimulation populations.
+        """
+        lapso = shrink * self.run_time / n_populations
+        delta = lapso / self.run_time
+        comienza = [RandomDistribution("uniform", [lapso * i+phase, lapso * i + delta+phase]) for i in range(n_populations)]
+        if full:
+            termina = [RandomDistribution("uniform", [self.run_time - delta, self.run_time]) for i
+                       in range(n_populations)]
+        else:
+            termina = [RandomDistribution("uniform", [lapso * stim_ratio, lapso * stim_ratio + delta]) for i
+                       in range(n_populations)]
+        stim_times = [lapso * i+phase for i in range(n_populations)]
+        return stim_times, comienza, termina
