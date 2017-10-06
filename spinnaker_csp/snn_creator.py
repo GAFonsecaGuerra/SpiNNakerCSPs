@@ -232,7 +232,7 @@ class CSP:
         self.d_populations = d_populations
         self.disss = diss_times
 
-   def connect_cores(self, w_range=[0.6, 1.2], d_range=[1.0, 1.2]):
+    def connect_cores(self, w_range=[0.6, 1.2], d_range=[1.0, 1.2]):
         """
         Create internal excitatory connections between the neurons of each domain subpopulation of each variable.
 
