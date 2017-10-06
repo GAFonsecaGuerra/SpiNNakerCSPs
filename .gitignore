@@ -1,0 +1,6 @@
+*.dat
+*.pyc
+application_generated_data_files/
+reports/
+results/
+spynnaker.cfg
