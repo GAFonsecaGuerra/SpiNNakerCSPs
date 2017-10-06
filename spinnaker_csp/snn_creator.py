@@ -281,3 +281,56 @@ class CSP:
                 synapses = p.Projection(self.var_pops[variable], self.var_pops[variable], p.FromListConnector(connections, safe=True),
                                         target="inhibitory")
                 self.internal_conns.append(synapses)
+
+
+    def stimulate_cores(self, w_range=[1.4, 1.4], d_range=[1.0, 1.0], w_clues=[1.4, 1.6]):  # w_clues=[0.0, 0.2]
+        """ connect stimulating noise sources to variables populations.
+
+        args:
+            w_range: range for the random distribution of synaptic weights in the form [w_min, w_max].
+            d_range: range for the random distribution of synaptic delays in the form [d_min, d_max].
+            w_clues: clues specific range for the random distribution of synaptic weights in the form [w_min, w_max].
+        """
+        p.set_number_of_neurons_per_core(p.IF_curr_exp, 150)
+        print(msg, 'connecting Poisson noise sources to neural populations for stimulation')
+        delays = RandomDistribution('uniform', d_range)
+        weights = RandomDistribution('uniform', w_range)
+        weight_clues = RandomDistribution("uniform", w_clues)
+        for stimulus in range(self.n_populations):
+            for variable in range(self.variables_number):
+                counter = 0
+                if variable in self.clues[0]:
+                    shift = self.clues[1][self.clues[0].index(variable)] * self.core_size
+                    connections = [(m, n + shift, weight_clues.next(), delays.next()) for m in range(self.core_size) for
+                                   n in range(self.clue_size)]
+                    synapses = p.Projection(self.clues_stim[counter], self.var_pops[variable],
+                                            p.FromListConnector(connections, safe=True), target='excitatory')
+                    counter += 1
+                    self.stim_conns.append(synapses)
+                else:
+                    synapses = p.Projection(self.stim_pops[stimulus][variable], self.var_pops[variable],
+                                            p.OneToOneConnector(weights=weights, delays=delays), target='excitatory')
+                    self.stim_conns.append(synapses)
+        self.stim_times += self.stims
+
+    def depress_cores(self, w_range=[-2.0, -1.5], d_range=[2.0, 2.0]):
+        """ connect depressing noise sources to variables populations.
+
+        args:
+            w_range: range for the random distribution of synaptic weights in the form [w_min, w_max].
+            d_range: range for the random distribution of synaptic delays in the form [d_min, d_max].
+        """
+        print(msg, 'connecting Poisson noise sources to neural populations for dissipation')
+        delays = RandomDistribution('uniform', d_range)
+        weights = RandomDistribution('uniform', w_range)
+        for depressor in range(self.d_populations):
+            for variable in range(self.variables_number):
+                if variable not in self.clues[0]:
+                    synapses = p.Projection(self.diss_pops[depressor][variable], self.var_pops[variable],
+                                            p.OneToOneConnector(weights=weights, delays=delays), target='inhibitory')
+                    self.diss_conns.append(synapses)
+        self.diss_times += self.disss
+
+
+
+
