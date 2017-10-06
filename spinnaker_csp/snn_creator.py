@@ -127,12 +127,13 @@ class CSP:
 
 
         args:
-            n_populations: number of noise populations to stimulate each CSP variable. 
-            shrink: shrink the run_time to uniformelly distribute noise pulses in a smaller interval (from 0. to 1.)
-            full: controls if the stimulations deactivation should all happen after run_time or at the lapso width.
-            stim_ratio: defines the portion of the stimulation window in which the stimulation will be active. A value 
+            n_populations: number of noise populations to stimulate each CSP variable.
+            full: controls if the noise deactivations should all happen after run_time or at the lapso width.
+            stim_ratio: defines the portion of the stimulation window in which the noise will be active. A value
                 of 0.5 will mean that stimulation happens only during the first half of the interval.
-
+            shrink: shrinks the time interval throughout wich the noise populations will be distributed.
+                It defines fraction of the run time, so it should be between 0.0 and 1.0.
+            phase: a waiting time before the first noise population activates.
         returns: 
             list of starting times
             lists of random distributions for start and duration of noise stimulation populations.
@@ -148,3 +149,86 @@ class CSP:
                        in range(n_populations)]
         stim_times = [lapso * i+phase for i in range(n_populations)]
         return stim_times, comienza, termina
+
+    def build_stimulation_pops(self, n_populations=1, shrink=1.0, stim_ratio=1.0, rate=(20.0, 20.0), full=True,
+                               phase=0.0, clue_size=None):
+        """ Generate noise sources for each neuron and creates additional stimulation sources for clues.
+
+        The noise sources are pyNN population objects of the SpikeSourcePoisson type, which generate spikes at times
+        described by a Poisson random process. In pyNN these objects connect with neurons using synapses as if they
+        were neurons too, these will be excitatorily  connected to the variable populations as stimulating noise.
+
+        Currently each SpikeSourcePoisson object accepts only a start time and a duration time, thus to change the noise
+        level through time one should create n different populations and activate them at different times. This method
+        passes the arguments to the poisson_params method and reads activation times and duration from its returns.
+        Such times define the stochastic search.
+
+        args:
+            n_populations: number of noise populations to stimulate each CSP variable.
+            shrink: shrinks the time interval throughout wich the noise populations will be distributed.
+                It defines fraction of the run time, so it should be between 0.0 and 1.0.
+            stim_ratio: defines the portion of the stimulation window in which the noise will be active. A value
+                of 0.5 will mean that stimulation happens only during the first half of the interval.
+            rate: a tuple of floating-point numbers defining the rate of the Poisson process for the noise
+                  populations, the first value is used for all CSP variable populations and the second value for
+                  the clues.
+            full: controls if the noise deactivations should all happen after run_time or at the lapso width.
+            phase: a waiting time before the first noise population activates.
+            clue_size: optional, number of neurons to use to stimulate clues, default value is core_size.
+        """
+        print(msg, 'creating %d populations of SpikeSourcePoisson noise sources for each variable'%(n_populations))
+        stim_times, comienza, termina = self.poisson_params(n_populations, full=full, stim_ratio=stim_ratio,
+                                                            shrink=shrink, phase=phase)
+        if clue_size == None:
+            clue_size = self.core_size
+        stim_pops = [[] for k in range(n_populations)]
+        clues_stim = []
+        for stimulus in range(n_populations):
+            for variable in range(self.variables_number):
+                stim_pops[stimulus].append(p.Population(self.size, p.SpikeSourcePoisson,
+                                                 {"rate": rate[0], "start": comienza[stimulus], "duration":
+                                                     termina[stimulus]}, label="stim%d_var%d" % (stimulus + 1, variable
+                                                                                                 + 1)))
+                if variable in self.clues[0]:
+                    clues_stim.append(p.Population(clue_size, p.SpikeSourcePoisson,
+                                                   {"rate": rate[1], "start": 0, "duration": self.run_time},
+                                                   label='clues_stim%d' % variable))
+        self.stim_pops = stim_pops
+        self.clues_stim = clues_stim
+        self.n_populations = n_populations
+        self.stims = stim_times
+        self.clue_size = clue_size
+
+    def build_dissipation_pops(self, d_populations=1, shrink=1.0, stim_ratio=1.0, rate=20.0, full=True, phase=0.0):
+        """ Generate noise sinks for each neuron: pyNN population objects of the type SpikeSourcePoisson.
+
+        the Poisson neural populations will be inhibitorilly connected to the variable populations, creating a
+        dissipative effect. This method passes the arguments to the poisson_params method and reads activation
+        times from the returns. If the clues_inhibition argument is False the clues will not receive inhibition.
+
+        args:
+            d_populations: number of dissipative noise populations to depress each CSP variable.
+            shrink: shrinks the time interval throughout wich the noise populations will be distributed.
+                It defines fraction of the run time, so it should be between 0.0 and 1.0.
+            stim_ratio: defines the portion of the depression window in which the noise will be active. A value
+                of 0.5 will mean that depression happens only during the first half of the interval.
+            rate: a floating-point number defining the rate of the Poisson process for the noise
+                  populations.
+            full: controls if the noise deactivations should all happen after run_time or at the lapso width.
+            phase: a waiting time before the first dissipation population activates.
+        """
+        print(msg, 'creating %d populations of dissipative noise sources for each variable' % (d_populations))
+        diss_times, comienza, termina = self.poisson_params(d_populations, full=full, stim_ratio=stim_ratio,
+                                                            shrink=shrink, phase=phase)
+        diss_pops = [[] for k in range(d_populations)]
+        for k in range(d_populations):
+            for j in range(self.variables_number):
+                diss_pops[k].append(p.Population(self.size, p.SpikeSourcePoisson,
+                                                 {"rate": rate, "start": comienza[k], "duration": termina[k]},
+                                                 label="diss%d_var%d" % (k + 1, j + 1)))
+        #TODO: if self.clues_inibition = False do not create the populations for the clues.
+        self.diss_pops = diss_pops
+        self.d_populations = d_populations
+        self.disss = diss_times
+
+
