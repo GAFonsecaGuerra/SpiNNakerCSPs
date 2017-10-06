@@ -395,3 +395,12 @@ class CSP:
                     self.constraint_conns.append(synapses)
 
 
+   def initialize(self, v_range=[-65.0, -55.0]):
+        """ Randomly initialize the membrane voltage of the neurons in the range v_range.
+
+        args:
+            v_range: range for the random distribution of membrane potentials in the form [v_min, v_max].
+        """
+        print msg, 'randomly setting the initial voltage for each variable population'
+        for var in self.var_pops:
+            var.initialize("v", RandomDistribution("uniform", v_range))
