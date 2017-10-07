@@ -38,5 +38,6 @@ imported on examples/sudoku.py
 """
 
 from snn_creator import CSP
+from puzzles.sudoku_puzzles import puzzles
 
-__all__ = ['snn_creator', 'analysis','CSP']
+__all__ = ['snn_creator', 'analysis','CSP','puzzles']
