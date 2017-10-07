@@ -11,12 +11,11 @@ a network of leaky integrate and fire spiking neurons whose connectivity represe
 are either inhibitory or excitatory. The neurons are stochastically stimulated by spike sources implementing a Poisson
 process causing the network dynamics to implement a stochastic search of the satisying configuration.
 """
-# a separator for readability of messages on standard output
 import spynnaker7.pyNN as p  # simulator
 from pyNN.random import RandomDistribution
 import numpy as np
 
-msg = '%s \n'%('='*70)
+msg = '%s \n'%('='*70) # a separator for readability of messages on standard output
 
 class CSP:
     """Map a constraint satisfaction problem into a spiking neural network. """
