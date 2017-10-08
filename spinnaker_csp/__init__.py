@@ -38,6 +38,8 @@ imported on examples/sudoku.py
 """
 
 from snn_creator import CSP
+from analysis import plot_entropy
+from translators.sudoku2csp import sudoku2csp
 from puzzles.sudoku_puzzles import puzzles
 
-__all__ = ['snn_creator', 'analysis','CSP','puzzles']
+__all__ = ['snn_creator', 'analysis','CSP','plot_entropy','sudoku2csp','puzzles']

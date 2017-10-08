@@ -1,7 +1,7 @@
-*.dat
-*.pyc
+**.dat
+**.pyc
 .idea
-application_generated_data_files/
-reports/
-results/
+**application_generated_data_files/
+**reports/
+**results/
 spynnaker.cfg

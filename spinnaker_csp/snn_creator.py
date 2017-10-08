@@ -3,7 +3,7 @@
 #
 # "Using Stochastic Spiking Neural Networks on SpiNNaker to Solve Constraint Satisfaction Problems"
 # Submitted to the journal Frontiers in Neuroscience| Neuromorphic Engineering
-#
+#-----------------------------------------------------------------------------------------------------------------------
 """Implement a framework to map a constraint satisfaction problem into a spiking neural network.
 
 This module contains the CSP class, which stands for Constraint Satisfaction Problem. Its methods allow the creation of
