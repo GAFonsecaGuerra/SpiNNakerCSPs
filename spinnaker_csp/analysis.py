@@ -20,7 +20,7 @@ try:
     import matplotlib.pyplot as plt
     plt.ioff()
 except:
-    print('matplotlib is not present, continuing without plots')
+    print 'matplotlib is not present, continuing without plots'
     missing_matplotlib=True
 
 msg = '%s \n'%('='*70) # A separator for readability of messages on standard output.
@@ -106,11 +106,11 @@ def plot_entropy(spikes_file=None, resolution=200, save_to=False, show=True, dra
                               var_to_plot=var_to_plot, show=show, lw=lw)
     sol, sol_time = get_solution(p_max, satisfiability)
     if sol_time is not None:
-        print(msg, """The simulation found a solution for the first time 
+        print msg, """The simulation found a solution for the first time 
         at time %d,
         at state %d,
         the total number of states visited is:%d
-        """ % (sol_time * resolution, visited_states[sol_time + 1], visited_states[-1]))
+        """ % (sol_time * resolution, visited_states[sol_time + 1], visited_states[-1])
     return sol
 
 def load_data(prefix=None):
@@ -292,11 +292,11 @@ def get_solution(winners_matrix, satisfiability):
             break
     if solution_time == None:
         last_bin = len(satisfiability) - 1
-        print(msg, 'the system did not find a solution, the last configuration of the network was:')
+        print msg, 'the system did not find a solution, the last configuration of the network was:'
         last = [var[last_bin][0] for var in winners_matrix]
-        print(last)
+        print last
     else:
-        print(msg, 'The simulation found a solution for the first time at bin %d' % solution_time)
+        print msg, 'The simulation found a solution for the first time at bin %d' % solution_time
     return solution, solution_time
 
 

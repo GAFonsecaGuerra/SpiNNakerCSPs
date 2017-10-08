@@ -10,21 +10,20 @@ Spiking Neural Network Solver for Sudoku puzzles.
 Some example puzzles are available to be imported from the puzzles folder.
 """
 import spynnaker7.pyNN as p                                           # simulator
-from spinnaker_csp import CSP, plot_entropy, sudoku2csp, puzzles
 import argparse
 
 try:
-    import spinnaker_csp
+    from spinnaker_csp import CSP, plot_entropy, sudoku2csp, puzzles
 except:
     import sys
     import os
     sys.path.append(os.getcwd()+'/..')
-    import spinnaker_csp
+    from spinnaker_csp import CSP, plot_entropy, sudoku2csp, puzzles
 
 #Take puzzle as argument
 parser = argparse.ArgumentParser(description='''This script creates a spiking neural network representation of a
                                              Sudoku puzzle whose dynamics implements a stochastic search for
-                                             satisfiability''')
+                                             satisfiability.''')
 parser.add_argument("puzzle", help='name of puzzle in puzzles dictionary: easy, hard, AI_escargot or platinum_blonde',
                     type=str, default='easy')
 args = parser.parse_args()
@@ -34,8 +33,8 @@ grid=puzzles[name][1]
 
 # Show puzzle in std output.
 for i in range(9):
-    print('''SpiNNaker will run the stochastic search simulation for:
-        %s'''%str(grid[i]))
+    print '''SpiNNaker will run the stochastic search simulation for:
+        %s'''%str(grid[i])
 # SpiNNaker setup.
 run_time = 60000         # simulation run time
 p.setup(timestep=1.0)    # SpiNNaker machine setup
@@ -66,8 +65,8 @@ sol = plot_entropy(name, 200)
 # Show solution on std output.
 if sol is not None:
     for i in range(len(sol)): sol[i]=sol[i]+1
-    print('='*70)
+    print '='*70
     n=0
     for i in range(9):
-        print(sol[n:n+9])
+        print sol[n:n+9]
         n+=9

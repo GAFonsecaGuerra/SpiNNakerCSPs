@@ -89,7 +89,7 @@ class CSP:
         The population size will be self.size = domain_size*core_size.
         var_pops[i] is the population for variable i including all domain sub-populations, each of size core_size.
         """
-        print(msg, 'creating an array of %d neural populations'%(self.variables_number))
+        print msg, 'creating an array of %d neural populations'%(self.variables_number)
         var_pops = []
         for variable in range(self.variables_number):
             var_pops.append(p.Population(self.size,
@@ -174,7 +174,7 @@ class CSP:
             phase: a waiting time before the first noise population activates.
             clue_size: optional, number of neurons to use to stimulate clues, default value is core_size.
         """
-        print(msg, 'creating %d populations of SpikeSourcePoisson noise sources for each variable'%(n_populations))
+        print msg, 'creating %d populations of SpikeSourcePoisson noise sources for each variable'%(n_populations)
         stim_times, comienza, termina = self.poisson_params(n_populations, full=full, stim_ratio=stim_ratio,
                                                             shrink=shrink, phase=phase)
         if clue_size == None:
@@ -215,7 +215,7 @@ class CSP:
             full: controls if the noise deactivations should all happen after run_time or at the lapso width.
             phase: a waiting time before the first dissipation population activates.
         """
-        print(msg, 'creating %d populations of dissipative noise sources for each variable' % (d_populations))
+        print msg, 'creating %d populations of dissipative noise sources for each variable' % (d_populations)
         diss_times, comienza, termina = self.poisson_params(d_populations, full=full, stim_ratio=stim_ratio,
                                                             shrink=shrink, phase=phase)
         diss_pops = [[] for k in range(d_populations)]
@@ -240,7 +240,7 @@ class CSP:
             w_range: range for the random distribution of synaptic weights in the form [w_min, w_max].
             d_range: range for the random distribution of synaptic delays in the form [d_min, d_max].
         """
-        print(msg, 'internally connnecting the neurons of each domain of each variable')
+        print msg, 'internally connnecting the neurons of each domain of each variable'
         delays = RandomDistribution('uniform', d_range)
         weights = RandomDistribution('uniform', w_range)
         connections = [(m, n, weights.next() if m // self.core_size == n // self.core_size and m != n else 0.0,
@@ -262,7 +262,7 @@ class CSP:
             w_range: range for the random distribution of synaptic weights in the form [w_min, w_max].
             d_range: range for the random distribution of synaptic delays in the form [d_min, d_max].
         """
-        print(msg, 'Creating lateral inhibition between domains of each variable')
+        print msg, 'Creating lateral inhibition between domains of each variable'
         delays = RandomDistribution('uniform', d_range)
         weights = RandomDistribution('uniform',w_range)
         connections = [(m, n, 0.0 if m // self.core_size == n // self.core_size else  weights.next(), delays.next()) for
@@ -289,7 +289,7 @@ class CSP:
             w_clues: clues specific range for the random distribution of synaptic weights in the form [w_min, w_max].
         """
         p.set_number_of_neurons_per_core(p.IF_curr_exp, 150)
-        print(msg, 'connecting Poisson noise sources to neural populations for stimulation')
+        print msg, 'connecting Poisson noise sources to neural populations for stimulation'
         delays = RandomDistribution('uniform', d_range)
         weights = RandomDistribution('uniform', w_range)
         weight_clues = RandomDistribution("uniform", w_clues)
@@ -317,7 +317,7 @@ class CSP:
             w_range: range for the random distribution of synaptic weights in the form [w_min, w_max].
             d_range: range for the random distribution of synaptic delays in the form [d_min, d_max].
         """
-        print(msg, 'connecting Poisson noise sources to neural populations for dissipation')
+        print msg, 'connecting Poisson noise sources to neural populations for dissipation'
         delays = RandomDistribution('uniform', d_range)
         weights = RandomDistribution('uniform', w_range)
         for depressor in range(self.d_populations):
@@ -345,11 +345,11 @@ class CSP:
         delays = RandomDistribution('uniform', d_range)
         weights = RandomDistribution('uniform', w_range)  # 1.8 2.0 spin_system
         if 'weight' in self.constraints[0]:
-            print(msg, 'creating constraints between CSP variables with specified weights and randomly distributed'
-                       ' delays')
+            print msg, '''creating constraints between CSP variables with specified weights and randomly distributed
+                        delays'''
         else:
-            print(msg, 'creating constraints between CSP variables with random and  uniformelly distributed delays '
-                       'and weights')
+            print msg, '''creating constraints between CSP variables with random and  uniformelly distributed delays
+                       and weights'''
         for constraint in self.constraints:
             source = constraint['source']
             target = constraint['target']
@@ -399,7 +399,7 @@ class CSP:
         args:
             v_range: range for the random distribution of membrane potentials in the form [v_min, v_max].
         """
-        print(msg, 'randomly setting the initial voltage for each variable population')
+        print msg, 'randomly setting the initial voltage for each variable population'
         for variable in self.var_pops:
             variable.initialize("v", RandomDistribution("uniform", v_range))
 
@@ -409,24 +409,24 @@ class CSP:
         If live class variable is set to True this method also activate live output for the neural populations 
         representing CSP variables.
         """
-        print(msg, 'activating recording for variable populations')
+        print msg, 'activating recording for variable populations'
         for population in self.var_pops:
             population.record()
         # Activate live output to be used for example with the Sudoku visualiser.
         if self.live:
-            print('activating live output')
+            print 'activating live output'
             p.external_devices.activate_live_output_for(self.var_pops)
 
     def record_stimulation(self):
         """Record spikes from stimulating noise sources."""
-        print(msg, 'activating recording for noise populations')
+        print msg, 'activating recording for noise populations'
         for stimulus in self.stim_pops:
             for population in stimulus:
                 population.record()
 
     def record_dissipation(self):
         """Record spikes from depressing noise sources."""
-        print(msg, 'activating recording for dissipation populations')
+        print msg, 'activating recording for dissipation populations'
         for depressor in self.diss_pops:
             depressor.record()
 
@@ -442,7 +442,7 @@ class CSP:
             DAT: whether spikes should be saved also in .dat format on an additional file.
         """
         if DAT:
-            print(msg, 'saving spikes from CSP variables to file results/%s_variable#.dat' % filename)
+            print msg, 'saving spikes from CSP variables to file results/%s_variable#.dat' % filename
             for var_index, population in enumerate(self.var_pops):
                 population.printSpikes('results/%s_variable%d.dat' % (filename, var_index))
         with open('results/%s_spikes_binary' % filename, 'w+') as file:
@@ -473,7 +473,7 @@ class CSP:
         """
         if DAT:
             for pulse_index, pulse in enumerate(self.stim_pops):
-                print(msg, 'saving spikes from noise sources to file results/stim_%d_%s.dat' % (pulse_index, filename))
+                print msg, 'saving spikes from noise sources to file results/stim_%d_%s.dat' % (pulse_index, filename)
                 for var_index, population in enumerate(pulse):
                     population.printSpikes('results/stim_%d_%s_variables%d.dat' % (pulse_index, filename, var_index))
         with open('results/%s_stim_spikes_binary' % filename, 'w+') as file:
@@ -494,7 +494,7 @@ class CSP:
         """
         if DAT:
             for pulse_index, pulse in enumerate(self.diss_pops):
-                print(msg, 'saving dissipation to file results/diss_%d_%s.dat' % (pulse_index, filename))
+                print msg, 'saving dissipation to file results/diss_%d_%s.dat' % (pulse_index, filename)
                 for var_index, population in enumerate(pulse):
                     population.printSpikes('results/diss_%d_%s_variable%d.dat' % (pulse_index, filename, var_index))
         with open('results/%s_diss_spikes_binary' % filename, 'w+') as file:
@@ -572,7 +572,7 @@ class CSP:
         """ % (net_neurons, var_neurons, stim_neurons, diss_neurons, pops_number, var_pops_num,
                diss_pops_num, stim_pops_num, self.domain_size, self.core_size, net_conns,
                stim_conns, diss_conns, constraint_conns, internal_conns, core_conns)
-        print(report)
+        print report
         # Print report to file.
         if filename:
             with open('results/%s.dat' % filename, 'w+') as file:
