@@ -57,7 +57,7 @@ sudoku.recording()
 p.run(run_time)
 # Save recorded spikes.
 sudoku.save(name, False)
-sudoku.report_network_params('report_sudoku_hard')
+sudoku.report_network_params('report_sudoku_%s'%name)
 # End simulation.
 p.end()
 # Plot entropy.

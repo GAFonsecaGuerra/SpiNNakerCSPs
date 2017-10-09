@@ -14,6 +14,7 @@ process causing the network dynamics to implement a stochastic search of the sat
 import spynnaker7.pyNN as p  # simulator
 from pyNN.random import RandomDistribution
 import numpy as np
+import os
 
 msg = '%s \n'%('='*70) # a separator for readability of messages on standard output
 
@@ -441,6 +442,8 @@ class CSP:
                 filename_spikes_binary.
             DAT: whether spikes should be saved also in .dat format on an additional file.
         """
+        if not os.path.exists('results'):
+            os.makedirs('results')
         if DAT:
             print msg, 'saving spikes from CSP variables to file results/%s_variable#.dat' % filename
             for var_index, population in enumerate(self.var_pops):
@@ -511,6 +514,8 @@ class CSP:
                 standard output.
         """
         # Count populations.
+        if not os.path.exists('results'):
+            os.makedirs('results')
         var_pops_num = len(self.var_pops)
         diss_pops_num = len(self.diss_pops)
         stim_pops_num = len(self.stim_pops) * len(self.stim_pops[0])
