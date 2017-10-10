@@ -41,26 +41,30 @@ you will also require:
 
 ## Files
 
-* snn_creator.py
-* analysis.py
-
-* spin2csp.py
-* sudoku2csp.py     
-* tsp2csp.py
-* world_border_countries.py
-
-* australia_cmp.py
-* world_cmp.py
-* sudoku_easy.py
-* sudoku_hard.py
-* escargot.py
-* spin_system.py 
-
 * README.md
 * CODE_OF_CONDUCT.md
-* __init__.py
-* spynnaker.cfg
+* .gitignore
 
+* spinnaker_csp
+        * __init__.py
+        * snn_creator.py
+        * analysis.py
+        * translators
+                * __init__.py
+                * spin2csp.py
+                * sudoku2csp.py   
+                * world_bordering_countries.py
+        * puzzles
+                * __init__.py
+                * sudoku_puzzles.py
+* examples
+        *  __init__.py
+        * cmp_australia.py
+        * cmp_world.py
+        * spin_lattice.py
+        * sudoku.py
+        * run.sh
+        
 ## Authors
 
 This package has been developed by  **Gabriel Fonseca**  - [GAFonsecaGuerra](https://github.com/GAFonsecaGuerra)
