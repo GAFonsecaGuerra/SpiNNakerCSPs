@@ -45,25 +45,25 @@ you will also require:
 * CODE_OF_CONDUCT.md
 * .gitignore
 
-* spinnaker_csp
+* spinnaker_csp/
+    * __init__.py
+    * snn_creator.py
+    * analysis.py
+    * translators
         * __init__.py
-        * snn_creator.py
-        * analysis.py
-        * translators
-                * __init__.py
-                * spin2csp.py
-                * sudoku2csp.py   
-                * world_bordering_countries.py
-        * puzzles
-                * __init__.py
-                * sudoku_puzzles.py
-* examples
-        *  __init__.py
-        * cmp_australia.py
-        * cmp_world.py
-        * spin_lattice.py
-        * sudoku.py
-        * run.sh
+        * spin2csp.py
+        * sudoku2csp.py   
+        * world_bordering_countries.py
+    * puzzles/
+        * __init__.py
+        * sudoku_puzzles.py
+* examples/
+    *  __init__.py
+    * cmp_australia.py
+    * cmp_world.py
+    * spin_lattice.py
+    * sudoku.py
+    * run.sh
         
 ## Authors
 
