@@ -20,21 +20,22 @@ except:
     sys.path.append(os.getcwd()+'/..')
     from spinnaker_csp import CSP, plot_entropy, sudoku2csp, puzzles
 
-#Take puzzle as argument
+#Take puzzle and naming as arguments.
 parser = argparse.ArgumentParser(description='''This script creates a spiking neural network representation of a
                                              Sudoku puzzle whose dynamics implements a stochastic search for
                                              satisfiability.''')
 parser.add_argument("puzzle", help='name of puzzle in puzzles dictionary: easy, hard, AI_escargot or platinum_blonde',
                     type=str, default='easy')
+parser.add_argument("-n", "--name", help='name to use for naming files', type=str, default='sudoku')
 args = parser.parse_args()
 
-name=args.puzzle
-grid=puzzles[name][1]
+name=args.name
+grid=puzzles[args.puzzle][1]
 
 # Show puzzle in std output.
+print 'SpiNNaker will run the stochastic search simulation for:'
 for i in range(9):
-    print '''SpiNNaker will run the stochastic search simulation for:
-        %s'''%str(grid[i])
+    print grid[i]
 # SpiNNaker setup.
 run_time = 60000         # simulation run time
 p.setup(timestep=1.0)    # SpiNNaker machine setup
@@ -57,11 +58,11 @@ sudoku.recording()
 p.run(run_time)
 # Save recorded spikes.
 sudoku.save(name, False)
-sudoku.report_network_params('report_sudoku_%s'%name)
+sudoku.report_network_params('report_%s'%name)
 # End simulation.
 p.end()
 # Plot entropy.
-sol = plot_entropy(name, 200)
+sol = plot_entropy(name, 200, show=False)
 # Show solution on std output.
 if sol is not None:
     for i in range(len(sol)): sol[i]=sol[i]+1

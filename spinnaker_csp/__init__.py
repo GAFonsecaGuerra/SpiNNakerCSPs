@@ -40,6 +40,9 @@ imported on examples/sudoku.py
 from snn_creator import CSP
 from analysis import plot_entropy
 from translators.sudoku2csp import sudoku2csp
+from translators.spin2csp import spin2csp
+from translators.world_bordering_countries import world_borders, world_countries
 from puzzles.sudoku_puzzles import puzzles
 
-__all__ = ['snn_creator', 'analysis','CSP','plot_entropy','sudoku2csp','puzzles']
+__all__ = ['snn_creator', 'analysis','CSP','plot_entropy','sudoku2csp','puzzles','spin2csp','world_borders',
+           'world_countries']

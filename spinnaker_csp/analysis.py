@@ -12,6 +12,7 @@ of the spiking neural network representation of the constraint satisfaction prob
 """
 import numpy as np
 import simplejson as sj
+import os
 from random import randint
 from scipy.interpolate import UnivariateSpline
 # Check whether matplotlib is available for importing or continue without plotting.
@@ -427,6 +428,8 @@ def plot_pop_activity(spikecount, time_bins, variables_number, domain_size, stim
         show: whether open the figures generated.
         lw:line width to be used in the plots.
     """
+    if not os.path.exists('results/Dynamics'):
+        os.makedirs('results/Dynamics')
     pop_activity = [[[0.0 for time in range(time_bins)] for domain in range(domain_size)] for variable in
                     range(variables_number)]
     for variable in range(variables_number):
@@ -467,7 +470,7 @@ def plot_pop_activity(spikecount, time_bins, variables_number, domain_size, stim
         plt.ylabel('$\hat{A}$',fontsize=font)
         plt.xlabel('time (ms)', fontsize=font)
         plt.tick_params(axis='both', which='major', labelsize=15)
-        plt.savefig("results/Dynamics/Dynamics_%s_var%d.png" % (save_to, var_to_plot[counter]))  # save plot
+        plt.savefig("results/Dynamics/%s_dynamics_variable_%d.png" % (save_to, var_to_plot[counter]))  # save plot
         if show:
             plt.show()
         plt.close()
