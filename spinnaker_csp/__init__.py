@@ -38,7 +38,7 @@ imported on examples/sudoku.py
 """
 
 from .snn_creator import CSP
-from .analysis import plot_entropy
+from .analysis import plot_entropy, load_data
 from .translators.sudoku2csp import sudoku2csp
 from .translators.spin2csp import spin2csp
 from .translators.world_bordering_countries import world_borders, world_countries
