@@ -40,6 +40,6 @@ do
         echo results/${NAME}_trial_${i}_spikes_binary is already present.
     else
         echo running trial_${i} for ${NAME}
-        python2 $EXE $NAME --name ${NAME}_trial_${i} $PARAM $VALUE
+        python3 $EXE $NAME --name ${NAME}_trial_${i} $PARAM $VALUE
     fi
 done
