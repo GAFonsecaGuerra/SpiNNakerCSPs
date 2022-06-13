@@ -678,7 +678,7 @@ class CSP:
         spikes = []
         for population in self.var_pops:
             spikes.append(
-                population.get_data("spikes").segments[0].spiketrains[0].magnitude
+                [i, spike[i].magnitude for i, spike in enumerate(population.get_data("spikes").segments[0].spiketrains)]
             )
         np.savez(filepath, params=params, *spikes)
         self.spikes_file = filename
@@ -710,7 +710,7 @@ class CSP:
         for pulse in self.stim_pops:
             for population in pulse:
                 spikes.append(
-                    population.get_data("spikes").segments[0].spiketrains[0].magnitude
+                    [i, spike[i].magnitude for i, spike in enumerate(population.get_data("spikes").segments[0].spiketrains)]
                 )
         np.savez(filepath, *spikes)
 
@@ -741,7 +741,7 @@ class CSP:
         for pulse in self.diss_pops:
             for population in pulse:
                 spikes.append(
-                    population.get_data("spikes").segments[0].spiketrains[0].magnitude
+                    [i, spike[i].magnitude for i, spike in enumerate(population.get_data("spikes").segments[0].spiketrains)]
                 )
         np.savez(filepath, *spikes)
 
