@@ -677,7 +677,9 @@ class CSP:
         ]
         spikes = []
         for population in self.var_pops:
-            spikes.append(population.get_data("spikes"))
+            spikes.append(
+                population.get_data("spikes").segments[0].spiketrains[0].magnitude
+            )
         np.savez(filepath, params=params, *spikes)
         self.spikes_file = filename
 
