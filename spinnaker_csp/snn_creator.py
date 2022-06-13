@@ -679,7 +679,9 @@ class CSP:
         for population in self.var_pops:
             spikes.append(
                 [
-                    [i, spike.magnitude]
+                    np.stack(
+                        [i * np.ones_like(spike.magnitude), spike.magnitude]
+                    ).transpose()
                     for i, spike in enumerate(
                         population.get_data("spikes").segments[0].spiketrains
                     )
@@ -716,7 +718,9 @@ class CSP:
             for population in pulse:
                 spikes.append(
                     [
-                        [i, spike.magnitude]
+                        np.stack(
+                            [i * np.ones_like(spike.magnitude), spike.magnitude]
+                        ).transpose()
                         for i, spike in enumerate(
                             population.get_data("spikes").segments[0].spiketrains
                         )
@@ -752,7 +756,9 @@ class CSP:
             for population in pulse:
                 spikes.append(
                     [
-                        [i, spike.magnitude]
+                        np.stack(
+                            [i * np.ones_like(spike.magnitude), spike.magnitude]
+                        ).transpose()
                         for i, spike in enumerate(
                             population.get_data("spikes").segments[0].spiketrains
                         )
