@@ -807,10 +807,13 @@ class CSP:
             """
             # synapse_number = sum(map(lambda x: len(x.getWeights('list').flatten()), projections_pop))
 
-            synapse_number = lambda x: x.get(
+            # synapse_number = lambda x: x.get(
+            #     "weight", "list", with_address=False
+            # ).flatten()
+            get_synapse_number = lambda x: x.get(
                 "weight", "list", with_address=False
             ).flatten()
-            synapse_number = map(synapse_number, projections_pop)
+            synapse_number = map(get_synapse_number, projections_pop)
             synapse_number = map(len, synapse_number)
             synapse_number = sum(synapse_number)
             return synapse_number
