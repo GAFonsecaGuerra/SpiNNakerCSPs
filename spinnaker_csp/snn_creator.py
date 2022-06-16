@@ -812,7 +812,7 @@ class CSP:
             # ).flatten()
             get_synapse_number = lambda x: x.get(
                 "weight", "list", with_address=False
-            ).flatten()
+            ).reshape(-1)
             synapse_number = map(get_synapse_number, projections_pop)
             synapse_number = map(len, synapse_number)
             synapse_number = sum(synapse_number)
