@@ -154,8 +154,8 @@ def plot_entropy(
     if TSP:
         with open("TSP_winners_matrix", "w") as file:
             sj.dump(p_max, file)
-    with open("results/entropy_%s.txt" % save_to, "w+") as file:
-        np.savetxt(file, [H, satisfiability])
+    # with open("results/entropy_%s.txt" % save_to, "w+") as file:
+    #     np.savetxt(file, [H, satisfiability])
     # ------------------------- pop activity
     if not missing_matplotlib:
         if pop_activity:
@@ -187,7 +187,7 @@ def plot_entropy(
         """
             % (sol_time * resolution, visited_states[sol_time + 1], visited_states[-1]),
         )
-    return sol
+    return sol, probabilities, p_max
 
 
 def load_data(prefix=None):
