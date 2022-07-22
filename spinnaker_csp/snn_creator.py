@@ -11,6 +11,7 @@ a network of leaky integrate and fire spiking neurons whose connectivity represe
 are either inhibitory or excitatory. The neurons are stochastically stimulated by spike sources implementing a Poisson
 process causing the network dynamics to implement a stochastic search of the satisying configuration.
 """
+from random import random
 import spynnaker8 as p  # simulator
 from pyNN.random import RandomDistribution
 import numpy as np
@@ -495,7 +496,13 @@ class CSP:
                 msg,
                 """creating constraints between CSP variables with random and  uniformelly distributed delays and weights""",
             )
-        for constraint in self.constraints:
+
+        if kind == "excitatory" and not random_cons:
+            applied_constraints = self.exc_constraints
+        else:
+            applied_constraints = self.constraints
+
+        for constraint in applied_constraints:
             source = constraint["source"]
             target = constraint["target"]
             if random_cons:
