@@ -39,6 +39,7 @@ class CSP:
     stim_times = []
     diss_times = []
     constraint_conns = []
+    state_constraint_conns = []
     # Whether set_clues populations should receive inhibition from other sources.
     clues_inhibition = False
     # Parameters for the leaky integrate and fire neurons.
@@ -58,8 +59,10 @@ class CSP:
         self,
         variables_number=0,
         domain_size=0,
-        constraints=[],
+        inh_constraints=[],
         exc_constraints=[],
+        inh_state_constraints=[],
+        exc_state_constraints=[],
         core_size=25,
         directed=False,
         run_time=30000,
@@ -80,8 +83,10 @@ class CSP:
         self.core_size = core_size
         self.size = domain_size * core_size
         self.directed = directed
-        self.constraints = constraints
+        self.inh_constraints = inh_constraints
         self.exc_constraints = exc_constraints
+        self.inh_state_constraints = inh_state_constraints
+        self.exc_state_constraints = exc_state_constraints
         self.clues = [[]]
         self.run_time = run_time
 
@@ -486,7 +491,7 @@ class CSP:
         """
         delays = RandomDistribution("uniform", d_range)
         weights = RandomDistribution("uniform", w_range)  # 1.8 2.0 spin_system
-        if "weight" in self.constraints[0]:
+        if "weight" in self.inh_constraints[0]:
             print(
                 msg,
                 """creating constraints between CSP variables with specified weights and randomly distributed delays""",
@@ -500,7 +505,7 @@ class CSP:
         if kind == "excitatory" and not random_cons:
             applied_constraints = self.exc_constraints
         else:
-            applied_constraints = self.constraints
+            applied_constraints = self.inh_constraints
 
         for constraint in applied_constraints:
             source = constraint["source"]
@@ -608,6 +613,115 @@ class CSP:
                     )
                     self.constraint_conns.append(synapses)
 
+    def apply_constraints_between_state(
+        self,
+        kind="inhibitory",
+        w_range=[-0.2, -0.0],
+        d_range=[2.0, 2.0],
+        random_cons=False,
+        pAF=0.5,
+    ):
+        """Map constraints list to inhibitory or excitatory connections between neural populations.
+
+        The clues_inhibition class variable determines whether clues should receive inhibitory connections or not.
+
+        args:
+            kind: whether constraints are inhibitory or excitatory.
+            w_range: range for the random distribution of synaptic weights in the form [w_min, w_max].
+            d_range: range for the random distribution of synaptic delays in the form [d_min, d_max].
+            random_cons: whether constraints are randomly choosen to be inhibitory or excitatory with probability pAF.
+            pAF: probability of inhibitory connections, as a probability it should be between 0.0 and 1.0. It only works
+                when random_cons is True.
+        """
+        delays = RandomDistribution("uniform", d_range)
+        weights = RandomDistribution("uniform", w_range)  # 1.8 2.0 spin_system
+
+        if kind == "excitatory" and not random_cons:
+            applied_state_constraints = self.exc_state_constraints
+        else:
+            applied_state_constraints = self.inh_state_constraints
+
+        if "weight" in applied_state_constraints[0]:
+            print(
+                msg,
+                """creating constraints between CSP variables with specified weights and randomly distributed delays""",
+            )
+        else:
+            print(
+                msg,
+                """creating constraints between CSP variables with random and  uniformelly distributed delays and weights""",
+            )
+
+        """
+        constraint = [{"source": 0, "target": 1, "source_state": [0, 0, 1, 1, 1, 2, 2, 2, ...], "target_state": [0, 1, 0, 1, 2, 1, 2, 3, ...]}, {...}]
+        """
+
+        for constraint in applied_state_constraints:
+            source = constraint["source"]
+            source_states = constraint["source_state"]
+            target = constraint["target"]
+            target_states = constraint["target_state"]
+            if random_cons:
+                kind = np.random.choice(["inhibitory", "excitatory"], p=[pAF, 1 - pAF])
+            if self.clues_inhibition:
+                for source_state, target_state in zip(source_states, target_states):
+                    connections = [
+                        [
+                            m + source_state * self.core_size,
+                            n + target_state * self.core_size,
+                            constraint["weight"]
+                            if "weight" in constraint
+                            else weights.next(),
+                            delays.next(),
+                        ]
+                        for n in range(self.core_size)
+                        for m in range(self.core_size)
+                    ]
+                    synapses = p.Projection(
+                        self.var_pops[source],
+                        self.var_pops[target],
+                        p.FromListConnector(connections, safe=True),
+                        receptor_type=kind,
+                    )
+                    self.state_constraint_conns.append(synapses)
+                    if self.directed == False:
+                        synapses = p.Projection(
+                            self.var_pops[target],
+                            self.var_pops[source],
+                            p.FromListConnector(connections, safe=True),
+                            receptor_type=kind,
+                        )
+                        self.state_constraint_conns.append(synapses)
+            elif target not in self.clues[0]:
+                for source_state, target_state in zip(source_states, target_states):
+                    connections = [
+                        [
+                            m + source_state * self.core_size,
+                            n + target_state * self.core_size,
+                            constraint["weight"]
+                            if "weight" in constraint
+                            else weights.next(),
+                            delays.next(),
+                        ]
+                        for n in range(self.core_size)
+                        for m in range(self.core_size)
+                    ]
+                    synapses = p.Projection(
+                        self.var_pops[source],
+                        self.var_pops[target],
+                        p.FromListConnector(connections, safe=True),
+                        receptor_type=kind,
+                    )
+                    self.state_constraint_conns.append(synapses)
+                    if self.directed == False:
+                        synapses = p.Projection(
+                            self.var_pops[target],
+                            self.var_pops[source],
+                            p.FromListConnector(connections, safe=True),
+                            receptor_type=kind,
+                        )
+                        self.state_constraint_conns.append(synapses)
+
     def initialize(self, v_range=[-65.0, -55.0]):
         """Randomly initialize the membrane voltage of the neurons in the range v_range.
 
@@ -678,7 +792,7 @@ class CSP:
             self.size,
             self.domain_size,
             self.core_size,
-            self.constraints,
+            self.inh_constraints,
             self.stim_times,
             self.diss_times,
         ]
@@ -803,27 +917,29 @@ class CSP:
         net_neurons = var_neurons + stim_neurons + diss_neurons
 
         # Create function to count synapses from projections list.
-        def projections_counter(projections_pop):
-            """Count synapses from a list of projections.
+        # def projections_counter(projections_pop):
+        #     """Count synapses from a list of projections.
 
-            args:
-                projections_pop: list of projections, collected when calling other methods.
+        #     args:
+        #         projections_pop: list of projections, collected when calling other methods.
 
-            returns:
-                synapse_number: the number of synapses generated by the list of projections.
-            """
-            # synapse_number = sum(map(lambda x: len(x.getWeights('list').flatten()), projections_pop))
+        #     returns:
+        #         synapse_number: the number of synapses generated by the list of projections.
+        #     """
+        #     # synapse_number = sum(map(lambda x: len(x.getWeights('list').flatten()), projections_pop))
 
-            # synapse_number = lambda x: x.get(
-            #     "weight", "list", with_address=False
-            # ).flatten()
-            get_synapse_number = lambda x: x.get(
-                "weight", "list", with_address=False
-            ).reshape(-1)
-            synapse_number = map(get_synapse_number, projections_pop)
-            synapse_number = map(len, synapse_number)
-            synapse_number = sum(synapse_number)
-            return synapse_number
+        #     # synapse_number = lambda x: x.get(
+        #     #     "weight", "list", with_address=False
+        #     # ).flatten()
+        #     get_synapse_number = lambda x: x.get(
+        #         "weight", "list", with_address=False
+        #     ).reshape(-1)
+        #     synapse_number = map(get_synapse_number, projections_pop)
+        #     synapse_number = map(len, synapse_number)
+        #     synapse_number = sum(synapse_number)
+        #     return synapse_number
+        def projections_counter(projections):
+            return sum(len(proj.get("weight", "list")) for proj in projections)
 
         # Count synapses created by methods that connected neural populations.
         core_conns = projections_counter(self.core_conns)
@@ -831,8 +947,16 @@ class CSP:
         stim_conns = projections_counter(self.stim_conns)
         diss_conns = projections_counter(self.diss_conns)
         constraint_conns = projections_counter(self.constraint_conns)
+        state_constraint_conns = projections_counter(self.state_constraint_conns)
         net_conns = sum(
-            [core_conns, internal_conns, stim_conns, diss_conns, constraint_conns]
+            [
+                core_conns,
+                internal_conns,
+                stim_conns,
+                diss_conns,
+                constraint_conns,
+                state_constraint_conns,
+            ]
         )
 
         # Report template.
@@ -855,6 +979,7 @@ class CSP:
         |    stimulating synapses:    %d
         |    dissipating synapses:    %d
         |    constraints synapses:    %d
+        | st constraints synapses:    %d
         |   var internal synapses:    %d
         |  core internal synapses:    %d
         |=====================================|
@@ -873,6 +998,7 @@ class CSP:
             stim_conns,
             diss_conns,
             constraint_conns,
+            state_constraint_conns,
             internal_conns,
             core_conns,
         )
