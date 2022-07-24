@@ -248,14 +248,24 @@ class CSP:
                     )
                 )
                 if variable in self.exc_clues[0]:
-                    clues_stim.append(
-                        p.Population(
-                            clue_size,
-                            p.SpikeSourcePoisson,
-                            {"rate": rate[1], "start": 0, "duration": self.run_time},
-                            label="clues_stim%d" % variable,
+                    clue_states = [
+                        self.exc_clues[1][i]
+                        for i, v in enumerate(self.exc_clues[0])
+                        if v == variable
+                    ]
+                    for clue_state in clue_states:
+                        clues_stim.append(
+                            p.Population(
+                                clue_size,
+                                p.SpikeSourcePoisson,
+                                {
+                                    "rate": rate[1],
+                                    "start": 0,
+                                    "duration": self.run_time,
+                                },
+                                label="clues_stim{}_{}".format(variable, clue_state),
+                            )
                         )
-                    )
         self.stim_pops = stim_pops
         self.clues_stim = clues_stim
         self.n_populations = n_populations
@@ -318,14 +328,24 @@ class CSP:
                     )
                 )
                 if variable in self.inh_clues[0]:
-                    clues_diss.append(
-                        p.Population(
-                            clue_size,
-                            p.SpikeSourcePoisson,
-                            {"rate": rate[1], "start": 0, "duration": self.run_time},
-                            label="clues_diss%d" % variable,
+                    clue_states = [
+                        self.inh_clues[1][i]
+                        for i, v in enumerate(self.inh_clues[0])
+                        if v == variable
+                    ]
+                    for clue_state in clue_states:
+                        clues_diss.append(
+                            p.Population(
+                                clue_size,
+                                p.SpikeSourcePoisson,
+                                {
+                                    "rate": rate[1],
+                                    "start": 0,
+                                    "duration": self.run_time,
+                                },
+                                label="clues_diss{}_{}".format(variable, clue_state),
+                            )
                         )
-                    )
         # TODO: if self.clues_inibition = False do not create the populations for the clues.
         self.diss_pops = diss_pops
         self.clues_diss = clues_diss
