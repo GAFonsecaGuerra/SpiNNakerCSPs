@@ -431,23 +431,26 @@ class CSP:
             for variable in range(self.variables_number):
                 counter = 0
                 if variable in self.exc_clues[0]:
-                    shift = (
-                        self.exc_clues[1][self.exc_clues[0].index(variable)]
-                        * self.core_size
-                    )
-                    connections = [
-                        (m, n + shift, weight_clues.next(), delays.next())
-                        for m in range(self.core_size)
-                        for n in range(self.clue_size)
+                    clue_states = [
+                        self.exc_clues[1][i]
+                        for i, v in enumerate(self.exc_clues[0])
+                        if v == variable
                     ]
-                    synapses = p.Projection(
-                        self.clues_stim[counter],
-                        self.var_pops[variable],
-                        p.FromListConnector(connections, safe=True),
-                        receptor_type="excitatory",
-                    )
-                    counter += 1
-                    self.stim_conns.append(synapses)
+                    for clue_state in clue_states:
+                        shift = clue_state * self.core_size
+                        connections = [
+                            (m, n + shift, weight_clues.next(), delays.next())
+                            for m in range(self.core_size)
+                            for n in range(self.clue_size)
+                        ]
+                        synapses = p.Projection(
+                            self.clues_stim[counter],
+                            self.var_pops[variable],
+                            p.FromListConnector(connections, safe=True),
+                            receptor_type="excitatory",
+                        )
+                        counter += 1
+                        self.stim_conns.append(synapses)
                 elif variable not in self.inh_clues[0]:
                     synapses = p.Projection(
                         self.stim_pops[stimulus][variable],
@@ -480,23 +483,26 @@ class CSP:
             for variable in range(self.variables_number):
                 counter = 0
                 if variable in self.inh_clues[0]:
-                    shift = (
-                        self.inh_clues[1][self.inh_clues[0].index(variable)]
-                        * self.core_size
-                    )
-                    connections = [
-                        (m, n + shift, weight_clues.next(), delays.next())
-                        for m in range(self.core_size)
-                        for n in range(self.clue_size)
+                    clue_states = [
+                        self.inh_clues[1][i]
+                        for i, v in enumerate(self.inh_clues[0])
+                        if v == variable
                     ]
-                    synapses = p.Projection(
-                        self.clues_diss[counter],
-                        self.var_pops[variable],
-                        p.FromListConnector(connections, safe=True),
-                        receptor_type="inhibitory",
-                    )
-                    counter += 1
-                    self.diss_conns.append(synapses)
+                    for clue_state in clue_states:
+                        shift = clue_state * self.core_size
+                        connections = [
+                            (m, n + shift, weight_clues.next(), delays.next())
+                            for m in range(self.core_size)
+                            for n in range(self.clue_size)
+                        ]
+                        synapses = p.Projection(
+                            self.clues_diss[counter],
+                            self.var_pops[variable],
+                            p.FromListConnector(connections, safe=True),
+                            receptor_type="inhibitory",
+                        )
+                        counter += 1
+                        self.diss_conns.append(synapses)
                 elif variable not in self.exc_clues[0]:
                     synapses = p.Projection(
                         self.diss_pops[depressor][variable],
