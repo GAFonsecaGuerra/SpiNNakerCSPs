@@ -87,10 +87,11 @@ class CSP:
         self.exc_constraints = exc_constraints
         self.inh_state_constraints = inh_state_constraints
         self.exc_state_constraints = exc_state_constraints
-        self.clues = [[]]
+        self.exc_clues = [[]]
+        self.inh_clues = [[]]
         self.run_time = run_time
 
-    def set_clues(self, clues):
+    def set_clues(self, exc_clues=None, inh_clues=None):
         """Take set_clues as an array of the form [[list of variables],[list of values]].
 
         Here clues are fixed and predetermined values for particular variables, These influence the constraints
@@ -99,7 +100,8 @@ class CSP:
         args:
             clues: an array of the form [[list of variable ids],[list of values taken by those variables]]
         """
-        self.clues = clues
+        self.exc_clues = exc_clues
+        self.inh_clues = inh_clues
 
     def build_domains_pops(self):
         """Generate an array of pyNN population objects, one for each CSP variable.
@@ -245,7 +247,7 @@ class CSP:
                         label="stim%d_var%d" % (stimulus + 1, variable + 1),
                     )
                 )
-                if variable in self.clues[0]:
+                if variable in self.exc_clues[0]:
                     clues_stim.append(
                         p.Population(
                             clue_size,
@@ -265,9 +267,10 @@ class CSP:
         d_populations=1,
         shrink=1.0,
         stim_ratio=1.0,
-        rate=20.0,
+        rate=(20.0, 20.0),
         full=True,
         phase=0.0,
+        clue_size=None,
     ):
         """Generate noise sinks for each neuron: pyNN population objects of the type SpikeSourcePoisson.
 
@@ -281,10 +284,12 @@ class CSP:
                 It defines fraction of the run time, so it should be between 0.0 and 1.0.
             stim_ratio: defines the portion of the depression window in which the noise will be active. A value
                 of 0.5 will mean that depression happens only during the first half of the interval.
-            rate: a floating-point number defining the rate of the Poisson process for the noise
-                  populations.
+            rate: a tuple of floating-point numbers defining the rate of the Poisson process for the noise
+                  populations, the first value is used for all CSP variable populations and the second value for
+                  the clues.
             full: controls if the noise deactivations should all happen after run_time or at the lapso width.
             phase: a waiting time before the first dissipation population activates.
+            clue_size: optional, number of neurons to use to stimulate clues, default value is core_size.
         """
         print(
             msg,
@@ -294,7 +299,10 @@ class CSP:
         diss_times, comienza, termina = self.poisson_params(
             d_populations, full=full, stim_ratio=stim_ratio, shrink=shrink, phase=phase
         )
+        if clue_size == None:
+            clue_size = self.core_size
         diss_pops = [[] for k in range(d_populations)]
+        clues_diss = []
         for k in range(d_populations):
             for variable in range(self.variables_number):
                 diss_pops[k].append(
@@ -302,17 +310,28 @@ class CSP:
                         self.size,
                         p.SpikeSourcePoisson,
                         {
-                            "rate": rate,
+                            "rate": rate[0],
                             "start": comienza[k].next(),
                             "duration": termina[k].next(),
                         },
                         label="diss%d_var%d" % (k + 1, variable + 1),
                     )
                 )
+                if variable in self.inh_clues[0]:
+                    clues_diss.append(
+                        p.Population(
+                            clue_size,
+                            p.SpikeSourcePoisson,
+                            {"rate": rate[1], "start": 0, "duration": self.run_time},
+                            label="clues_diss%d" % variable,
+                        )
+                    )
         # TODO: if self.clues_inibition = False do not create the populations for the clues.
         self.diss_pops = diss_pops
+        self.clues_diss = clues_diss
         self.d_populations = d_populations
         self.disss = diss_times
+        self.clues_size = clue_size
 
     def connect_cores(self, w_range=[0.6, 1.2], d_range=[1.0, 1.2]):
         """Create internal excitatory connections between the neurons of each domain subpopulation of each variable.
@@ -381,7 +400,7 @@ class CSP:
                     receptor_type="inhibitory",
                 )
                 self.internal_conns.append(synapses)
-            elif variable not in self.clues:
+            elif variable not in self.exc_clues:
                 synapses = p.Projection(
                     self.var_pops[variable],
                     self.var_pops[variable],
@@ -411,9 +430,10 @@ class CSP:
         for stimulus in range(self.n_populations):
             for variable in range(self.variables_number):
                 counter = 0
-                if variable in self.clues[0]:
+                if variable in self.exc_clues[0]:
                     shift = (
-                        self.clues[1][self.clues[0].index(variable)] * self.core_size
+                        self.exc_clues[1][self.exc_clues[0].index(variable)]
+                        * self.core_size
                     )
                     connections = [
                         (m, n + shift, weight_clues.next(), delays.next())
@@ -428,7 +448,7 @@ class CSP:
                     )
                     counter += 1
                     self.stim_conns.append(synapses)
-                else:
+                elif variable not in self.inh_clues[0]:
                     synapses = p.Projection(
                         self.stim_pops[stimulus][variable],
                         self.var_pops[variable],
@@ -441,12 +461,13 @@ class CSP:
                     self.stim_conns.append(synapses)
         self.stim_times += self.stims
 
-    def depress_cores(self, w_range=[-2.0, -1.5], d_range=[2.0, 2.0]):
+    def depress_cores(self, w_range=[1.4, 1.4], d_range=[1.0, 1.0], w_clues=[1.4, 1.6]):
         """Connect depressing noise sources to variables populations.
 
         args:
             w_range: range for the random distribution of synaptic weights in the form [w_min, w_max].
             d_range: range for the random distribution of synaptic delays in the form [d_min, d_max].
+            w_clues: clues specific range for the random distribution of synaptic weights in the form [w_min, w_max].
         """
         print(
             msg,
@@ -454,9 +475,29 @@ class CSP:
         )
         delays = RandomDistribution("uniform", d_range)
         weights = RandomDistribution("uniform", w_range)
+        weight_clues = RandomDistribution("uniform", w_clues)
         for depressor in range(self.d_populations):
             for variable in range(self.variables_number):
-                if variable not in self.clues[0]:
+                counter = 0
+                if variable in self.inh_clues[0]:
+                    shift = (
+                        self.inh_clues[1][self.inh_clues[0].index(variable)]
+                        * self.core_size
+                    )
+                    connections = [
+                        (m, n + shift, weight_clues.next(), delays.next())
+                        for m in range(self.core_size)
+                        for n in range(self.clue_size)
+                    ]
+                    synapses = p.Projection(
+                        self.clues_diss[counter],
+                        self.var_pops[variable],
+                        p.FromListConnector(connections, safe=True),
+                        receptor_type="inhibitory",
+                    )
+                    counter += 1
+                    self.diss_conns.append(synapses)
+                elif variable not in self.exc_clues[0]:
                     synapses = p.Projection(
                         self.diss_pops[depressor][variable],
                         self.var_pops[variable],
@@ -563,7 +604,7 @@ class CSP:
                         receptor_type=kind,
                     )
                     self.constraint_conns.append(synapses)
-            elif target not in self.clues[0]:
+            elif target not in self.exc_clues[0]:
                 # connections = []
                 connections = [
                     [
@@ -692,7 +733,7 @@ class CSP:
                             receptor_type=kind,
                         )
                         self.state_constraint_conns.append(synapses)
-            elif target not in self.clues[0]:
+            elif target not in self.exc_clues[0]:
                 for source_state, target_state in zip(source_states, target_states):
                     connections = [
                         [
@@ -907,7 +948,7 @@ class CSP:
         if not os.path.exists("results"):
             os.makedirs("results")
         var_pops_num = len(self.var_pops)
-        diss_pops_num = len(self.diss_pops)
+        diss_pops_num = len(self.diss_pops) * len(self.diss_pops[0])
         stim_pops_num = len(self.stim_pops) * len(self.stim_pops[0])
         pops_number = var_pops_num + diss_pops_num + stim_pops_num
         # Count neurons.
