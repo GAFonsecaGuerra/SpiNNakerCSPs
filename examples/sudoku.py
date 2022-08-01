@@ -52,7 +52,7 @@ p.setup(timestep=1.0)  # SpiNNaker machine setup
 sk = sudoku2csp(grid)
 # Build spiking neural network.
 sudoku = CSP(
-    sk.var_num, sk.dom_num, sk.constraints, core_size=5, run_time=run_time
+    sk.var_num, sk.dom_num, sk.constraints, core_size=25, run_time=run_time
 )  # create csp instance
 sudoku.clues_inhibition = True
 sudoku.set_clues(sk.clues)
@@ -63,7 +63,7 @@ sudoku.internal_inhibition(w_range=[-0.2 / 2.5, 0.0])
 sudoku.stimulate_cores(
     w_range=[1.4, 1.6], d_range=[1.0, 1.0], w_clues=[1.8, 2.0]
 )  # , w_clues=[1.5, 1.9])
-# sudoku.apply_constraints(w_range=[-0.2 / 2.5, 0.0])
+sudoku.apply_constraints(kind="inhibitory", w_range=[-0.2 / 2.5, 0.0])
 sudoku.initialize()
 # Record spikes from variable populations.
 sudoku.recording()
@@ -75,7 +75,7 @@ sudoku.report_network_params("report_%s" % name)
 # End simulation.
 p.end()
 # Plot entropy.
-sol = plot_entropy(name, 200, show=False)
+sol, probabilities, p_max = plot_entropy(name, 200, show=False)
 # Show solution on std output.
 if sol is not None:
     for i in range(len(sol)):
@@ -83,5 +83,5 @@ if sol is not None:
     print("=" * 70)
     n = 0
     for i in range(9):
-        print(sol[n : n + 9])
+        print(sol[n: n + 9])
         n += 9

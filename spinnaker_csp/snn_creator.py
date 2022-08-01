@@ -17,7 +17,8 @@ from pyNN.random import RandomDistribution
 import numpy as np
 import os
 
-msg = "%s \n" % ("=" * 70)  # a separator for readability of messages on standard output
+# a separator for readability of messages on standard output
+msg = "%s \n" % ("=" * 70)
 
 
 class CSP:
@@ -91,7 +92,7 @@ class CSP:
         self.inh_clues = [[]]
         self.run_time = run_time
 
-    def set_clues(self, exc_clues=None, inh_clues=None):
+    def set_clues(self, exc_clues=[[]], inh_clues=[[]]):
         """Take set_clues as an array of the form [[list of variables],[list of values]].
 
         Here clues are fixed and predetermined values for particular variables, These influence the constraints
@@ -110,7 +111,8 @@ class CSP:
         var_pops[i] is the population for variable i including all domain sub-populations, each of size core_size.
         """
         print(
-            msg, "creating an array of %d neural populations" % (self.variables_number)
+            msg, "creating an array of %d neural populations" % (
+                self.variables_number)
         )
         var_pops = []
         for variable in range(self.variables_number):
@@ -174,7 +176,8 @@ class CSP:
         ]
         if full:
             termina = [
-                RandomDistribution("uniform", [self.run_time - delta, self.run_time])
+                RandomDistribution(
+                    "uniform", [self.run_time - delta, self.run_time])
                 for i in range(n_populations)
             ]
         else:
@@ -263,7 +266,8 @@ class CSP:
                                     "start": 0,
                                     "duration": self.run_time,
                                 },
-                                label="clues_stim{}_{}".format(variable, clue_state),
+                                label="clues_stim{}_{}".format(
+                                    variable, clue_state),
                             )
                         )
         self.stim_pops = stim_pops
@@ -343,7 +347,8 @@ class CSP:
                                     "start": 0,
                                     "duration": self.run_time,
                                 },
-                                label="clues_diss{}_{}".format(variable, clue_state),
+                                label="clues_diss{}_{}".format(
+                                    variable, clue_state),
                             )
                         )
         # TODO: if self.clues_inibition = False do not create the populations for the clues.
@@ -578,7 +583,8 @@ class CSP:
             source = constraint["source"]
             target = constraint["target"]
             if random_cons:
-                kind = np.random.choice(["inhibitory", "excitatory"], p=[pAF, 1 - pAF])
+                kind = np.random.choice(
+                    ["inhibitory", "excitatory"], p=[pAF, 1 - pAF])
             # TODO find a way of reducing the next two conditionals, they're equal except for conditioning on target...
             # TODO ... being a clue.
             if self.clues_inhibition:
@@ -729,7 +735,8 @@ class CSP:
             target = constraint["target"]
             target_states = constraint["target_state"]
             if random_cons:
-                kind = np.random.choice(["inhibitory", "excitatory"], p=[pAF, 1 - pAF])
+                kind = np.random.choice(
+                    ["inhibitory", "excitatory"], p=[pAF, 1 - pAF])
             if self.clues_inhibition:
                 for source_state, target_state in zip(source_states, target_states):
                     connections = [
@@ -869,10 +876,12 @@ class CSP:
                 np.concatenate(
                     [
                         np.stack(
-                            [i * np.ones_like(spike.magnitude), spike.magnitude]
+                            [i * np.ones_like(spike.magnitude),
+                             spike.magnitude]
                         ).transpose()
                         for i, spike in enumerate(
-                            population.get_data("spikes").segments[0].spiketrains
+                            population.get_data(
+                                "spikes").segments[0].spiketrains
                         )
                     ],
                     axis=0,
@@ -911,10 +920,12 @@ class CSP:
                     np.concatenate(
                         [
                             np.stack(
-                                [i * np.ones_like(spike.magnitude), spike.magnitude]
+                                [i * np.ones_like(spike.magnitude),
+                                 spike.magnitude]
                             ).transpose()
                             for i, spike in enumerate(
-                                population.get_data("spikes").segments[0].spiketrains
+                                population.get_data(
+                                    "spikes").segments[0].spiketrains
                             )
                         ],
                         axis=0,
@@ -952,10 +963,12 @@ class CSP:
                     np.concatenate(
                         [
                             np.stack(
-                                [i * np.ones_like(spike.magnitude), spike.magnitude]
+                                [i * np.ones_like(spike.magnitude),
+                                 spike.magnitude]
                             ).transpose()
                             for i, spike in enumerate(
-                                population.get_data("spikes").segments[0].spiketrains
+                                population.get_data(
+                                    "spikes").segments[0].spiketrains
                             )
                         ],
                         axis=0,
@@ -974,8 +987,10 @@ class CSP:
         if not os.path.exists("results"):
             os.makedirs("results")
         var_pops_num = len(self.var_pops)
-        diss_pops_num = len(self.diss_pops) * len(self.diss_pops[0])
-        stim_pops_num = len(self.stim_pops) * len(self.stim_pops[0])
+        diss_pops_num = 0 if len(self.diss_pops[0]) == 0 else len(
+            self.diss_pops) * len(self.diss_pops[0])
+        stim_pops_num = 0 if len(self.stim_pops[0]) == 0 else len(
+            self.stim_pops) * len(self.stim_pops[0])
         pops_number = var_pops_num + diss_pops_num + stim_pops_num
         # Count neurons.
         var_neurons = var_pops_num * self.size
@@ -992,7 +1007,8 @@ class CSP:
         stim_conns = projections_counter(self.stim_conns)
         diss_conns = projections_counter(self.diss_conns)
         constraint_conns = projections_counter(self.constraint_conns)
-        state_constraint_conns = projections_counter(self.state_constraint_conns)
+        state_constraint_conns = projections_counter(
+            self.state_constraint_conns)
         net_conns = sum(
             [
                 core_conns,
