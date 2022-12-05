@@ -195,7 +195,7 @@ class CSP:
         n_populations=1,
         shrink=1.0,
         stim_ratio=1.0,
-        rate=(20.0, 20.0),
+        rate=(20.0, 50.0),
         full=True,
         phase=0.0,
         clue_size=None,
@@ -232,8 +232,9 @@ class CSP:
         stim_times, comienza, termina = self.poisson_params(
             n_populations, full=full, stim_ratio=stim_ratio, shrink=shrink, phase=phase
         )
-        if clue_size == None:
-            clue_size = self.core_size
+        self.clue_size = clue_size
+        if self.clue_size == None:
+            self.clue_size = self.core_size
         stim_pops = [[] for k in range(n_populations)]
         clues_stim = []
         for stimulus in range(n_populations):
@@ -259,7 +260,7 @@ class CSP:
                     for clue_state in clue_states:
                         clues_stim.append(
                             p.Population(
-                                clue_size,
+                                self.clue_size,
                                 p.SpikeSourcePoisson,
                                 {
                                     "rate": rate[1],
@@ -281,7 +282,7 @@ class CSP:
         d_populations=1,
         shrink=1.0,
         stim_ratio=1.0,
-        rate=(20.0, 20.0),
+        rate=(20.0, 50.0),
         full=True,
         phase=0.0,
         clue_size=None,
@@ -313,8 +314,9 @@ class CSP:
         diss_times, comienza, termina = self.poisson_params(
             d_populations, full=full, stim_ratio=stim_ratio, shrink=shrink, phase=phase
         )
-        if clue_size == None:
-            clue_size = self.core_size
+        self.clue_size = clue_size
+        if self.clue_size == None:
+            self.clue_size = self.core_size
         diss_pops = [[] for k in range(d_populations)]
         clues_diss = []
         for k in range(d_populations):
@@ -340,7 +342,7 @@ class CSP:
                     for clue_state in clue_states:
                         clues_diss.append(
                             p.Population(
-                                clue_size,
+                                self.clue_size,
                                 p.SpikeSourcePoisson,
                                 {
                                     "rate": rate[1],
@@ -454,6 +456,16 @@ class CSP:
         weight_clues = RandomDistribution("uniform", w_clues)
         for stimulus in range(self.n_populations):
             for variable in range(self.variables_number):
+                synapses = p.Projection(
+                    self.stim_pops[stimulus][variable],
+                    self.var_pops[variable],
+                    p.OneToOneConnector(),
+                    synapse_type=p.StaticSynapse(
+                        weight=weights, delay=delays.next()
+                    ),
+                    receptor_type="excitatory",
+                )
+                self.stim_conns.append(synapses)
                 counter = 0
                 if variable in self.exc_clues[0]:
                     clue_states = [
@@ -476,17 +488,6 @@ class CSP:
                         )
                         counter += 1
                         self.stim_conns.append(synapses)
-                elif variable not in self.inh_clues[0]:
-                    synapses = p.Projection(
-                        self.stim_pops[stimulus][variable],
-                        self.var_pops[variable],
-                        p.OneToOneConnector(),
-                        synapse_type=p.StaticSynapse(
-                            weight=weights, delay=delays.next()
-                        ),
-                        receptor_type="excitatory",
-                    )
-                    self.stim_conns.append(synapses)
         self.stim_times += self.stims
 
     def depress_cores(self, w_range=[1.4, 1.4], d_range=[1.0, 1.0], w_clues=[1.4, 1.6]):
@@ -506,6 +507,16 @@ class CSP:
         weight_clues = RandomDistribution("uniform", w_clues)
         for depressor in range(self.d_populations):
             for variable in range(self.variables_number):
+                synapses = p.Projection(
+                    self.diss_pops[depressor][variable],
+                    self.var_pops[variable],
+                    p.OneToOneConnector(),
+                    synapse_type=p.StaticSynapse(
+                        weight=weights, delay=delays.next()
+                    ),
+                    receptor_type="inhibitory",
+                )
+                self.diss_conns.append(synapses)
                 counter = 0
                 if variable in self.inh_clues[0]:
                     clue_states = [
@@ -528,17 +539,6 @@ class CSP:
                         )
                         counter += 1
                         self.diss_conns.append(synapses)
-                elif variable not in self.exc_clues[0]:
-                    synapses = p.Projection(
-                        self.diss_pops[depressor][variable],
-                        self.var_pops[variable],
-                        p.OneToOneConnector(),
-                        synapse_type=p.StaticSynapse(
-                            weight=weights, delay=delays.next()
-                        ),
-                        receptor_type="inhibitory",
-                    )
-                    self.diss_conns.append(synapses)
         self.diss_times += self.disss
 
     def apply_constraints(
@@ -991,12 +991,20 @@ class CSP:
             self.diss_pops) * len(self.diss_pops[0])
         stim_pops_num = 0 if len(self.stim_pops[0]) == 0 else len(
             self.stim_pops) * len(self.stim_pops[0])
-        pops_number = var_pops_num + diss_pops_num + stim_pops_num
+        clue_stim_pop_num = 0 if len(
+            self.clues_stim) == 0 else len(self.clues_stim)
+        clue_diss_pop_num = 0 if len(
+            self.clues_diss) == 0 else len(self.clues_diss)
+        pops_number = var_pops_num + diss_pops_num + \
+            stim_pops_num + clue_stim_pop_num + clue_diss_pop_num
         # Count neurons.
         var_neurons = var_pops_num * self.size
         stim_neurons = stim_pops_num * self.size
         diss_neurons = diss_pops_num * self.size
-        net_neurons = var_neurons + stim_neurons + diss_neurons
+        clue_stim_neurons = clue_stim_pop_num * self.clue_size
+        clue_diss_neurons = clue_diss_pop_num * self.clue_size
+        net_neurons = var_neurons + stim_neurons + \
+            diss_neurons + clue_stim_neurons + clue_diss_neurons
 
         def projections_counter(projections):
             return sum(len(proj.get("weight", "list")) for proj in projections)
